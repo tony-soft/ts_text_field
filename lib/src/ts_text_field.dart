@@ -5,19 +5,18 @@
 import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 
-import 'ts_editable_text.dart' as TsEditableText;
 import 'ts_editable_text.dart';
-import 'ts_text_selection.dart' as TsTextSelection;
+import 'ts_text_selection.dart';
 
 export 'package:flutter/services.dart' show TextInputType, TextInputAction, TextCapitalization, SmartQuotesType, SmartDashesType;
 
-class _TextFieldSelectionGestureDetectorBuilder extends TsTextSelection.TsTextSelectionGestureDetectorBuilder {
+class _TextFieldSelectionGestureDetectorBuilder extends TsTextSelectionGestureDetectorBuilder {
   _TextFieldSelectionGestureDetectorBuilder({
     required _TsTextFieldState state,
   })  : _state = state,
@@ -176,54 +175,11 @@ class _TextFieldSelectionGestureDetectorBuilder extends TsTextSelection.TsTextSe
 /// callback. This callback is applied to the text field's current value when
 /// the user finishes editing.
 ///
-/// {@tool dartpad --template=stateful_widget_material}
-///
+/// {@tool dartpad}
 /// This sample shows how to get a value from a TextField via the [onSubmitted]
 /// callback.
 ///
-/// ```dart
-/// late TextEditingController _controller;
-///
-/// @override
-/// void initState() {
-///   super.initState();
-///   _controller = TextEditingController();
-/// }
-///
-/// @override
-/// void dispose() {
-///   _controller.dispose();
-///   super.dispose();
-/// }
-///
-/// @override
-/// Widget build(BuildContext context) {
-///   return Scaffold(
-///     body: Center(
-///       child: TextField(
-///         controller: _controller,
-///         onSubmitted: (String value) async {
-///           await showDialog<void>(
-///             context: context,
-///             builder: (BuildContext context) {
-///               return AlertDialog(
-///                 title: const Text('Thanks!'),
-///                 content: Text ('You typed "$value", which has length ${value.characters.length}.'),
-///                 actions: <Widget>[
-///                   TextButton(
-///                     onPressed: () { Navigator.pop(context); },
-///                     child: const Text('OK'),
-///                   ),
-///                 ],
-///               );
-///             },
-///           );
-///         },
-///       ),
-///     ),
-///   );
-/// }
-/// ```
+/// ** See code in examples/api/lib/material/text_field/text_field.1.dart **
 /// {@end-tool}
 ///
 /// For most applications the [onSubmitted] callback will be sufficient for
@@ -293,7 +249,7 @@ class TsTextField extends StatefulWidget {
   ///
   /// If [maxLengthEnforced] is set to false, then more than [maxLength]
   /// characters may be entered, and the error counter and divider will
-  /// switch to the [decoration.errorStyle] when the limit is exceeded.
+  /// switch to the [decoration].errorStyle when the limit is exceeded.
   ///
   /// The text cursor is not shown if [showCursor] is false or if [showCursor]
   /// is null (the default) and [readOnly] is true.
@@ -305,8 +261,8 @@ class TsTextField extends StatefulWidget {
   ///
   /// The [textAlign], [autofocus], [obscureText], [readOnly], [autocorrect],
   /// [maxLengthEnforced], [scrollPadding], [maxLines], [maxLength],
-  /// [selectionHeightStyle], [selectionWidthStyle], and [enableSuggestions]
-  /// arguments must not be null.
+  /// [selectionHeightStyle], [selectionWidthStyle], [enableSuggestions], and
+  /// [enableIMEPersonalizedLearning] arguments must not be null.
   ///
   /// See also:
   ///
@@ -368,8 +324,10 @@ class TsTextField extends StatefulWidget {
     this.buildCounter,
     this.scrollController,
     this.scrollPhysics,
-    this.autofillHints,
+    this.autofillHints = const <String>[],
+    this.clipBehavior = Clip.hardEdge,
     this.restorationId,
+    this.enableIMEPersonalizedLearning = true,
   })  : assert(textAlign != null),
         assert(readOnly != null),
         assert(autofocus != null),
@@ -407,6 +365,8 @@ class TsTextField extends StatefulWidget {
           !identical(textInputAction, TextInputAction.newline) || maxLines == 1 || !identical(keyboardType, TextInputType.text),
           'Use keyboardType TextInputType.multiline when using TextInputAction.newline on a multiline TextField.',
         ),
+        assert(clipBehavior != null),
+        assert(enableIMEPersonalizedLearning != null),
         keyboardType = keyboardType ?? (maxLines == 1 ? TextInputType.text : TextInputType.multiline),
         toolbarOptions = toolbarOptions ??
             (obscureText
@@ -529,9 +489,13 @@ class TsTextField extends StatefulWidget {
   final bool enableSuggestions;
 
   /// {@macro flutter.widgets.editableText.maxLines}
+  ///  * [expands], which determines whether the field should fill the height of
+  ///    its parent.
   final int? maxLines;
 
   /// {@macro flutter.widgets.editableText.minLines}
+  ///  * [expands], which determines whether the field should fill the height of
+  ///    its parent.
   final int? minLines;
 
   /// {@macro flutter.widgets.editableText.expands}
@@ -777,6 +741,11 @@ class TsTextField extends StatefulWidget {
   /// {@macro flutter.services.AutofillConfiguration.autofillHints}
   final Iterable<String>? autofillHints;
 
+  /// {@macro flutter.material.Material.clipBehavior}
+  ///
+  /// Defaults to [Clip.hardEdge].
+  final Clip clipBehavior;
+
   /// {@template flutter.material.textfield.restorationId}
   /// Restoration ID to save and restore the state of the text field.
   ///
@@ -796,8 +765,11 @@ class TsTextField extends StatefulWidget {
   /// {@endtemplate}
   final String? restorationId;
 
+  /// {@macro flutter.services.TextInputConfiguration.enableIMEPersonalizedLearning}
+  final bool enableIMEPersonalizedLearning;
+
   @override
-  _TsTextFieldState createState() => _TsTextFieldState();
+  State<TsTextField> createState() => _TsTextFieldState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -836,10 +808,12 @@ class TsTextField extends StatefulWidget {
     properties.add(DiagnosticsProperty<TextSelectionControls>('selectionControls', selectionControls, defaultValue: null));
     properties.add(DiagnosticsProperty<ScrollController>('scrollController', scrollController, defaultValue: null));
     properties.add(DiagnosticsProperty<ScrollPhysics>('scrollPhysics', scrollPhysics, defaultValue: null));
+    properties.add(DiagnosticsProperty<Clip>('clipBehavior', clipBehavior, defaultValue: Clip.hardEdge));
+    properties.add(DiagnosticsProperty<bool>('enableIMEPersonalizedLearning', enableIMEPersonalizedLearning, defaultValue: true));
   }
 }
 
-class _TsTextFieldState extends State<TsTextField> with RestorationMixin implements TsTextSelection.TsTextSelectionGestureDetectorBuilderDelegate {
+class _TsTextFieldState extends State<TsTextField> with RestorationMixin implements TsTextSelectionGestureDetectorBuilderDelegate, AutofillClient {
   RestorableTextEditingController? _controller;
   TextEditingController get _effectiveController => widget.controller ?? _controller!.value;
 
@@ -861,7 +835,7 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
   late bool forcePressEnabled;
 
   @override
-  final GlobalKey<TsEditableText.TsEditableTextState> editableTextKey = GlobalKey<TsEditableText.TsEditableTextState>();
+  final GlobalKey<TsEditableTextState> editableTextKey = GlobalKey<TsEditableTextState>();
 
   @override
   bool get selectionEnabled => widget.selectionEnabled;
@@ -944,6 +918,7 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
       _createLocalController();
     }
     _effectiveFocusNode.canRequestFocus = _isEnabled;
+    _effectiveFocusNode.addListener(_handleFocusChanged);
   }
 
   bool get _canRequestFocus {
@@ -972,7 +947,14 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
       _controller!.dispose();
       _controller = null;
     }
+
+    if (widget.focusNode != oldWidget.focusNode) {
+      (oldWidget.focusNode ?? _focusNode)?.removeListener(_handleFocusChanged);
+      (widget.focusNode ?? _focusNode)?.addListener(_handleFocusChanged);
+    }
+
     _effectiveFocusNode.canRequestFocus = _canRequestFocus;
+
     if (_effectiveFocusNode.hasFocus && widget.readOnly != oldWidget.readOnly && _isEnabled) {
       if (_effectiveController.selection.isCollapsed) {
         _showSelectionHandles = !widget.readOnly;
@@ -1005,6 +987,7 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
 
   @override
   void dispose() {
+    _effectiveFocusNode.removeListener(_handleFocusChanged);
     _focusNode?.dispose();
     _controller?.dispose();
     super.dispose();
@@ -1032,6 +1015,13 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
     if (_effectiveController.text.isNotEmpty) return true;
 
     return false;
+  }
+
+  void _handleFocusChanged() {
+    setState(() {
+      // Rebuild the widget on focus change to show/hide the text selection
+      // highlight.
+    });
   }
 
   void _handleSelectionChanged(TextSelection selection, SelectionChangedCause? cause) {
@@ -1071,6 +1061,29 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
       });
     }
   }
+
+  // AutofillClient implementation start.
+  @override
+  String get autofillId => _editableText!.autofillId;
+
+  @override
+  void autofill(TextEditingValue newEditingValue) => _editableText!.autofill(newEditingValue);
+
+  @override
+  TextInputConfiguration get textInputConfiguration {
+    final List<String>? autofillHints = widget.autofillHints?.toList(growable: false);
+    final AutofillConfiguration autofillConfiguration = autofillHints != null
+        ? AutofillConfiguration(
+            uniqueIdentifier: autofillId,
+            autofillHints: autofillHints,
+            currentEditingValue: _effectiveController.value,
+            hintText: (widget.decoration ?? const InputDecoration()).hintText,
+          )
+        : AutofillConfiguration.disabled;
+
+    return _editableText!.textInputConfiguration.copyWith(autofillConfiguration: autofillConfiguration);
+  }
+  // AutofillClient implementation end.
 
   @override
   Widget build(BuildContext context) {
@@ -1164,7 +1177,7 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
     Widget child = RepaintBoundary(
       child: UnmanagedRestorationScope(
         bucket: bucket,
-        child: TsEditableText.TsEditableText(
+        child: TsEditableText(
           key: editableTextKey,
           readOnly: widget.readOnly || !_isEnabled,
           toolbarOptions: widget.toolbarOptions,
@@ -1189,7 +1202,8 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
           maxLines: widget.maxLines,
           minLines: widget.minLines,
           expands: widget.expands,
-          selectionColor: selectionColor,
+          // Only show the selection highlight when the text field is focused.
+          selectionColor: focusNode.hasFocus ? selectionColor : null,
           selectionControls: widget.selectionEnabled ? textSelectionControls : null,
           onChanged: widget.onChanged,
           onSelectionChanged: _handleSelectionChanged,
@@ -1216,9 +1230,11 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
           dragStartBehavior: widget.dragStartBehavior,
           scrollController: widget.scrollController,
           scrollPhysics: widget.scrollPhysics,
-          autofillHints: widget.autofillHints,
+          autofillClient: this,
           autocorrectionTextRectColor: autocorrectionTextRectColor,
+          clipBehavior: widget.clipBehavior,
           restorationId: 'editable',
+          enableIMEPersonalizedLearning: widget.enableIMEPersonalizedLearning,
         ),
       ),
     );
@@ -1259,31 +1275,34 @@ class _TsTextFieldState extends State<TsTextField> with RestorationMixin impleme
       semanticsMaxValueLength = null;
     }
 
-    return MouseRegion(
-      cursor: effectiveMouseCursor,
-      onEnter: (PointerEnterEvent event) => _handleHover(true),
-      onExit: (PointerExitEvent event) => _handleHover(false),
-      child: IgnorePointer(
-        ignoring: !_isEnabled,
-        child: AnimatedBuilder(
-          animation: controller, // changes the _currentLength
-          builder: (BuildContext context, Widget? child) {
-            return Semantics(
-              maxValueLength: semanticsMaxValueLength,
-              currentValueLength: _currentLength,
-              onTap: widget.readOnly
-                  ? null
-                  : () {
-                      if (!_effectiveController.selection.isValid) _effectiveController.selection = TextSelection.collapsed(offset: _effectiveController.text.length);
-                      _requestKeyboard();
-                    },
-              onDidGainAccessibilityFocus: handleDidGainAccessibilityFocus,
+    return FocusTrapArea(
+      focusNode: focusNode,
+      child: MouseRegion(
+        cursor: effectiveMouseCursor,
+        onEnter: (PointerEnterEvent event) => _handleHover(true),
+        onExit: (PointerExitEvent event) => _handleHover(false),
+        child: IgnorePointer(
+          ignoring: !_isEnabled,
+          child: AnimatedBuilder(
+            animation: controller, // changes the _currentLength
+            builder: (BuildContext context, Widget? child) {
+              return Semantics(
+                maxValueLength: semanticsMaxValueLength,
+                currentValueLength: _currentLength,
+                onTap: widget.readOnly
+                    ? null
+                    : () {
+                        if (!_effectiveController.selection.isValid) _effectiveController.selection = TextSelection.collapsed(offset: _effectiveController.text.length);
+                        _requestKeyboard();
+                      },
+                onDidGainAccessibilityFocus: handleDidGainAccessibilityFocus,
+                child: child,
+              );
+            },
+            child: _selectionGestureDetectorBuilder.buildGestureDetector(
+              behavior: HitTestBehavior.translucent,
               child: child,
-            );
-          },
-          child: _selectionGestureDetectorBuilder.buildGestureDetector(
-            behavior: HitTestBehavior.translucent,
-            child: child,
+            ),
           ),
         ),
       ),

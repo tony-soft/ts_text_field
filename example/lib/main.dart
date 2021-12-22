@@ -35,8 +35,22 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: TsTextField(),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: "TextField"),
+              ),
+              TsTextField(
+                decoration: InputDecoration(labelText: "TsTextField"),
+              ),
+              TsTextFormField(
+                decoration: InputDecoration(labelText: "TsTextFormField"),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

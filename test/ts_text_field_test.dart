@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ts_text_field/src/ts_text_field.dart';
+import 'package:ts_text_field/src/material/ts_text_field.dart';
 
 void main() {
   // test('adds one to input values', () {

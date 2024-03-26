@@ -71,14 +71,22 @@ class TsAdaptiveTextSelectionToolbar extends StatelessWidget {
     required VoidCallback? onCut,
     required VoidCallback? onPaste,
     required VoidCallback? onSelectAll,
+    required VoidCallback? onLookUp,
+    required VoidCallback? onSearchWeb,
+    required VoidCallback? onShare,
+    required VoidCallback? onLiveTextInput,
     required this.anchors,
   })  : children = null,
-        buttonItems = EditableText.getEditableButtonItems(
-          clipboardStatus: clipboardStatus,
-          onCopy: onCopy,
-          onCut: onCut,
-          onPaste: onPaste,
-          onSelectAll: onSelectAll,
+        buttonItems = TsEditableText.getEditableButtonItems(
+            clipboardStatus: clipboardStatus,
+            onCopy: onCopy,
+            onCut: onCut,
+            onPaste: onPaste,
+            onSelectAll: onSelectAll,
+            onLookUp: onLookUp,
+            onSearchWeb: onSearchWeb,
+            onShare: onShare,
+            onLiveTextInput: onLiveTextInput
         );
 
   /// Create an instance of [TsAdaptiveTextSelectionToolbar] with the default
@@ -179,6 +187,16 @@ class TsAdaptiveTextSelectionToolbar extends StatelessWidget {
             return localizations.pasteButtonLabel;
           case ContextMenuButtonType.selectAll:
             return localizations.selectAllButtonLabel;
+          case ContextMenuButtonType.delete:
+            return localizations.deleteButtonTooltip.toUpperCase();
+          case ContextMenuButtonType.lookUp:
+            return localizations.lookUpButtonLabel;
+          case ContextMenuButtonType.searchWeb:
+            return localizations.searchWebButtonLabel;
+          case ContextMenuButtonType.share:
+            return localizations.shareButtonLabel;
+          case ContextMenuButtonType.liveTextInput:
+            return localizations.scanTextButtonLabel;
           case ContextMenuButtonType.custom:
             return '';
         }
@@ -208,9 +226,8 @@ class TsAdaptiveTextSelectionToolbar extends StatelessWidget {
     switch (Theme.of(context).platform) {
       case TargetPlatform.iOS:
         return buttonItems.map((ContextMenuButtonItem buttonItem) {
-          return CupertinoTextSelectionToolbarButton.text(
-            onPressed: buttonItem.onPressed,
-            text: getButtonLabel(context, buttonItem),
+          return CupertinoTextSelectionToolbarButton.buttonItem(
+            buttonItem: buttonItem,
           );
         });
       case TargetPlatform.fuchsia:
@@ -237,7 +254,6 @@ class TsAdaptiveTextSelectionToolbar extends StatelessWidget {
       case TargetPlatform.macOS:
         return buttonItems.map((ContextMenuButtonItem buttonItem) {
           return CupertinoDesktopTextSelectionToolbarButton.text(
-            context: context,
             onPressed: buttonItem.onPressed,
             text: getButtonLabel(context, buttonItem),
           );
@@ -248,12 +264,14 @@ class TsAdaptiveTextSelectionToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // If there aren't any buttons to build, build an empty toolbar.
-    if ((children != null && children!.isEmpty) || (buttonItems != null && buttonItems!.isEmpty)) {
+    if ((children != null && children!.isEmpty)
+        || (buttonItems != null && buttonItems!.isEmpty)) {
       return const SizedBox.shrink();
     }
 
-    final List<Widget> resultChildren =
-        children != null ? children! : getAdaptiveButtons(context, buttonItems!).toList();
+    final List<Widget> resultChildren = children != null
+        ? children!
+        : getAdaptiveButtons(context, buttonItems!).toList();
 
     switch (Theme.of(context).platform) {
       case TargetPlatform.iOS:

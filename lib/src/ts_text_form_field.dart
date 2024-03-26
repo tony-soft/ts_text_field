@@ -4,10 +4,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ts_text_field/src/ts_adaptive_text_selection_toolbar.dart';
+import 'package:ts_text_field/src/material/ts_adaptive_text_selection_toolbar.dart';
 import 'package:ts_text_field/src/ts_editable_text.dart';
 
-import 'ts_text_field.dart';
+import 'material/ts_text_field.dart';
 
 export 'package:flutter/services.dart' show SmartQuotesType, SmartDashesType;
 

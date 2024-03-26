@@ -2995,6 +2995,9 @@ class TsEditableTextState extends State<TsEditableText>
   @override
   void connectionClosed() {
     log('connectionClosed() _hasInputConnection = $_hasInputConnection');
+    return;
+
+    // todo: 원래 아래의 코드가 있었지만, 안드로이드 기기(삼성 키보드)에서 한글자 입력 후 포커스가 완전히 없어지는 상황을 막기 위해서 그냥 리턴하도록 수정했음
     if (_hasInputConnection) {
       _textInputConnection!.connectionClosedReceived();
       _textInputConnection = null;
@@ -3027,10 +3030,13 @@ class TsEditableTextState extends State<TsEditableText>
   /// ask the focus system that it become focused. If successful in acquiring
   /// focus, the control will then attach to the keyboard and request that the
   /// keyboard become visible.
-  void requestKeyboard() {
+  void requestKeyboard([SelectionChangedCause? cause]) {
+    // todo: 외장 키보드로 입력하면 소프트웨어 키보드가 사라진 상태로 타이핑이 이어져야하기 때문에, 키보드 입력으로 인한 경우 커넥션을 열지 않도록 수정했음
     log('requestKeyboard() _hasFocus = $_hasFocus');
     if (_hasFocus) {
-      _openInputConnection();
+      if (cause != SelectionChangedCause.keyboard) {
+        _openInputConnection();
+      }
     } else {
       _flagInternalFocus();
       widget.focusNode.requestFocus(); // This eventually calls _openInputConnection also, see _handleFocusChanged.
@@ -3108,10 +3114,10 @@ class TsEditableTextState extends State<TsEditableText>
       case SelectionChangedCause.scribble:
       case SelectionChangedCause.tap:
       case SelectionChangedCause.toolbar:
-        requestKeyboard();
+        requestKeyboard(cause);
       case SelectionChangedCause.keyboard:
         if (_hasFocus) {
-          requestKeyboard();
+          requestKeyboard(cause);
         }
     }
     if (widget.selectionControls == null && widget.contextMenuBuilder == null) {

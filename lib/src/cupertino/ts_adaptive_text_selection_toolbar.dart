@@ -150,6 +150,7 @@ class TsCupertinoAdaptiveTextSelectionToolbar extends StatelessWidget {
           selectionGeometry: selectionGeometry,
           onCopy: onCopy,
           onSelectAll: onSelectAll,
+          onShare: null, // See https://github.com/flutter/flutter/issues/141775.
         );
 
   /// {@macro flutter.material.AdaptiveTextSelectionToolbar.anchors}
